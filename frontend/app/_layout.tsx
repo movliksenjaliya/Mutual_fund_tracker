@@ -1,13 +1,11 @@
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
+import { StatusBar } from "expo-status-bar";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { useIconFonts } from "@/src/hooks/use-icon-fonts";
 
-// Keep the native splash visible from cold start until icon fonts register.
-// Required because @expo/vector-icons' componentDidMount fallback fires
-// Font.loadAsync against a broken vendor path if any <Icon> mounts before
-// the family is registered — which throws on Android Expo Go.
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
@@ -19,9 +17,20 @@ export default function RootLayout() {
     }
   }, [loaded, error]);
 
-  // If the CDN is unreachable we fall through on error rather than wedging
-  // the app — icons will tofu, but the app still boots.
   if (!loaded && !error) return null;
 
-  return <Stack screenOptions={{ headerShown: false }} />;
+  return (
+    <SafeAreaProvider>
+      <StatusBar style="dark" />
+      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: "#F9F8F6" } }}>
+        <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="search" options={{ presentation: "modal" }} />
+        <Stack.Screen name="fund/[code]" />
+        <Stack.Screen name="tools/sip" />
+        <Stack.Screen name="tools/lumpsum" />
+        <Stack.Screen name="settings" />
+        <Stack.Screen name="add-holding" options={{ presentation: "modal" }} />
+      </Stack>
+    </SafeAreaProvider>
+  );
 }
