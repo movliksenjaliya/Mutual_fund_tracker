@@ -187,17 +187,16 @@ async def get_nifty():
 @api_router.get("/watchlist")
 async def list_watchlist():
     items = await db.watchlist.find({}, {"_id": 0}).sort("created_at", -1).to_list(500)
-    # Enrich with current NAV
-    out = []
-    for item in items:
+    # Fetch NAVs concurrently to avoid N+1 latency
+    async def fetch_one(item: dict) -> dict:
         try:
             data = await fetch_scheme(item["scheme_code"])
-            nav = parse_nav_summary(data)
-            out.append({**item, "nav": nav})
+            return {**item, "nav": parse_nav_summary(data)}
         except Exception as e:
             logger.warning(f"NAV fetch failed for {item['scheme_code']}: {e}")
-            out.append({**item, "nav": None})
-    return {"items": out}
+            return {**item, "nav": None}
+    out = await asyncio.gather(*(fetch_one(it) for it in items))
+    return {"items": list(out)}
 
 
 @api_router.post("/watchlist", response_model=WatchlistItem)
@@ -235,10 +234,8 @@ async def delete_watchlist(item_id: str):
 @api_router.get("/portfolio")
 async def list_portfolio():
     items = await db.portfolio.find({}, {"_id": 0}).sort("created_at", -1).to_list(500)
-    enriched = []
-    total_invested = 0.0
-    total_current = 0.0
-    for item in items:
+
+    async def enrich_one(item: dict) -> dict:
         invested = item["units"] * item["avg_buy_price"]
         nav = None
         current_value = invested
@@ -252,16 +249,18 @@ async def list_portfolio():
             pnl_pct = (pnl / invested) * 100 if invested else 0.0
         except Exception as e:
             logger.warning(f"Portfolio NAV failed {item['scheme_code']}: {e}")
-        total_invested += invested
-        total_current += current_value
-        enriched.append({
+        return {
             **item,
             "invested": round(invested, 2),
             "current_value": round(current_value, 2),
             "pnl": round(pnl, 2),
             "pnl_pct": round(pnl_pct, 4),
             "nav": nav,
-        })
+        }
+
+    enriched = list(await asyncio.gather(*(enrich_one(it) for it in items)))
+    total_invested = sum(e["invested"] for e in enriched)
+    total_current = sum(e["current_value"] for e in enriched)
     total_pnl = total_current - total_invested
     total_pnl_pct = (total_pnl / total_invested) * 100 if total_invested else 0.0
     return {
@@ -307,14 +306,16 @@ async def delete_portfolio(item_id: str):
 @api_router.get("/dashboard/best-buys")
 async def best_buys():
     items = await db.watchlist.find({}, {"_id": 0}).to_list(500)
-    results = []
-    for item in items:
+
+    async def fetch_one(item: dict):
         try:
             data = await fetch_scheme(item["scheme_code"])
-            nav = parse_nav_summary(data)
-            results.append({**item, "nav": nav})
+            return {**item, "nav": parse_nav_summary(data)}
         except Exception:
-            continue
+            return None
+
+    raw = await asyncio.gather(*(fetch_one(it) for it in items))
+    results = [r for r in raw if r is not None]
     # Sort by most negative change_pct first
     results.sort(key=lambda x: x["nav"]["change_pct"] if x.get("nav") else 0)
     # Return only those that dropped (change_pct < 0) — top 5
