@@ -1,0 +1,197 @@
+{
+  "project_context": {
+    "domain": "Finance/Investment Tracking (Indian Mutual Funds)",
+    "theme": "Light",
+    "archetype": "1 (Organic & Earthy)"
+  },
+  "design_system": {
+    "colors": {
+      "background": {
+        "primary": "#F9F8F6",
+        "secondary": "#F0EFE9",
+        "surface": "#FFFFFF"
+      },
+      "brand": {
+        "primary": "#2C4C3B",
+        "secondary": "#A8C3B3",
+        "accent": "#B94A3E"
+      },
+      "semantic": {
+        "positive": "#347A5A",
+        "positive_bg": "#EAF2EE",
+        "negative": "#B94A3E",
+        "negative_bg": "#F8EAE9",
+        "warning": "#D9822B",
+        "info": "#4A6E8C"
+      },
+      "text": {
+        "primary": "#1C1C1A",
+        "secondary": "#6C6A65",
+        "tertiary": "#9C9A95",
+        "inverse": "#FFFFFF"
+      },
+      "border": {
+        "light": "#E5E3DB",
+        "medium": "#D1CFCE",
+        "focus": "#2C4C3B"
+      }
+    },
+    "typography": {
+      "fonts": {
+        "heading": "Manrope",
+        "body": "IBM Plex Sans",
+        "mono": "IBM Plex Mono"
+      },
+      "scale": {
+        "h1": { "fontSize": 32, "lineHeight": 40, "letterSpacing": -0.5, "fontWeight": "800" },
+        "h2": { "fontSize": 24, "lineHeight": 32, "letterSpacing": -0.3, "fontWeight": "700" },
+        "h3": { "fontSize": 20, "lineHeight": 28, "letterSpacing": -0.2, "fontWeight": "600" },
+        "h4": { "fontSize": 18, "lineHeight": 24, "letterSpacing": -0.1, "fontWeight": "600" },
+        "bodyLarge": { "fontSize": 16, "lineHeight": 24, "fontWeight": "400" },
+        "bodyMedium": { "fontSize": 14, "lineHeight": 20, "fontWeight": "400" },
+        "bodySmall": { "fontSize": 12, "lineHeight": 16, "fontWeight": "400" },
+        "overline": { "fontSize": 10, "lineHeight": 14, "letterSpacing": 1.2, "textTransform": "uppercase", "fontWeight": "700" },
+        "financialLarge": { "fontSize": 36, "lineHeight": 44, "letterSpacing": -1, "fontWeight": "700" }
+      }
+    },
+    "spacing": {
+      "p1": 4,
+      "p2": 8,
+      "p3": 12,
+      "p4": 16,
+      "p6": 24,
+      "p8": 32,
+      "p10": 40,
+      "p12": 48
+    },
+    "borders": {
+      "radius": {
+        "sm": 4,
+        "md": 8,
+        "lg": 16,
+        "xl": 24,
+        "pill": 9999
+      },
+      "width": {
+        "thin": 1,
+        "medium": 2
+      }
+    },
+    "shadows": {
+      "sm": "0px 2px 4px rgba(28, 28, 26, 0.05)",
+      "md": "0px 4px 8px rgba(28, 28, 26, 0.08)",
+      "lg": "0px 8px 16px rgba(28, 28, 26, 0.12)"
+    }
+  },
+  "layout_strategies": {
+    "container_padding": 24,
+    "bento_spacing": 16,
+    "principles": [
+      "Mobile-first responsive layouts with generous padding (min 24px screen edges).",
+      "Left-align data arrays; avoid centering layout structure.",
+      "Use explicit 1px borders (#E5E3DB) rather than heavy drop shadows to define bounds.",
+      "Negative space is a structural tool. Let financial data breathe.",
+      "Embrace asymmetry in non-data screens (e.g., onboarding)."
+    ]
+  },
+  "components": {
+    "buttons": {
+      "primary": {
+        "backgroundColor": "brand.primary",
+        "color": "text.inverse",
+        "borderRadius": "borders.radius.pill",
+        "paddingHorizontal": "spacing.p6",
+        "paddingVertical": "spacing.p4",
+        "fontWeight": "600"
+      },
+      "secondary": {
+        "backgroundColor": "transparent",
+        "borderColor": "border.medium",
+        "borderWidth": "borders.width.thin",
+        "color": "text.primary",
+        "borderRadius": "borders.radius.pill",
+        "paddingHorizontal": "spacing.p6",
+        "paddingVertical": "spacing.p4",
+        "fontWeight": "600"
+      }
+    },
+    "cards": {
+      "default": {
+        "backgroundColor": "background.surface",
+        "borderColor": "border.light",
+        "borderWidth": "borders.width.thin",
+        "borderRadius": "borders.radius.lg",
+        "padding": "spacing.p6"
+      },
+      "financialWidget": {
+        "backgroundColor": "background.surface",
+        "borderColor": "transparent",
+        "borderRadius": "borders.radius.md",
+        "padding": "spacing.p4",
+        "shadow": "shadows.sm"
+      }
+    },
+    "financial_data": {
+      "positiveTrend": {
+        "color": "semantic.positive",
+        "backgroundColor": "semantic.positive_bg",
+        "indicator": "arrow-up"
+      },
+      "negativeTrend": {
+        "color": "semantic.negative",
+        "backgroundColor": "semantic.negative_bg",
+        "indicator": "arrow-down"
+      }
+    },
+    "inputs": {
+      "default": {
+        "borderColor": "border.medium",
+        "borderWidth": "borders.width.thin",
+        "borderRadius": "borders.radius.md",
+        "padding": "spacing.p4",
+        "color": "text.primary",
+        "placeholderColor": "text.tertiary"
+      }
+    }
+  },
+  "media": {
+    "images": [
+      {
+        "id": "app_logo",
+        "url": "https://static.prod-images.emergentagent.com/jobs/ef9a8266-6a8d-431a-bb78-96d047868e7a/images/165e8027c8d64c1e96acd9e56d5b4f14158bc8e60dd1f1a95765703f667ab946.png",
+        "category": "logo",
+        "description": "Minimalist flat logo, abstract leaf/arrow. Use for Splash screen and header branding."
+      },
+      {
+        "id": "onboarding_hero",
+        "url": "https://static.prod-images.emergentagent.com/jobs/ef9a8266-6a8d-431a-bb78-96d047868e7a/images/3330858dde2953edb982c9301cdb3e5c4d1c5e85dd241a37d9bc2fd3c5af9a61.png",
+        "category": "hero",
+        "description": "High-end minimalist plant/coins. Use for welcome/onboarding screen."
+      },
+      {
+        "id": "empty_state_basket",
+        "url": "https://static.prod-images.emergentagent.com/jobs/ef9a8266-6a8d-431a-bb78-96d047868e7a/images/0f7cd3f5dc6e832c96a854c2419bfc9481321a3bbdd2674bff5c465bf6fd86e4.png",
+        "category": "empty_state",
+        "description": "Empty woven basket illustration. Use for empty Watchlist or Portfolio views."
+      }
+    ],
+    "icons": {
+      "library": "@expo/vector-icons (Feather or Phosphor)",
+      "usage": "Use crisp, minimalist icons. Avoid filled icons unless active. Use stroke width 1.5px or 2px max."
+    }
+  },
+  "testing": {
+    "attributes": "All interactive and key informational elements MUST include a 'testID' (in React Native) or 'data-testid' attribute for robust automated testing. E.g. testID='portfolio-total-value'."
+  },
+  "instructions_to_main_agent": [
+    "Use React Native Expo + expo-router with tab navigation.",
+    "Do NOT use typical SaaS blue or dark mode. Strictly use the defined Earthy Forest Green (#2C4C3B) and Sand background (#F9F8F6) in light mode only.",
+    "Do NOT center your layouts. Maintain left-aligned, highly readable grids.",
+    "Implement 'testID' on all pressables, inputs, and important text nodes (e.g. balances, navs).",
+    "Use the exact media URLs provided under 'media' for placeholders/graphics. Do NOT use fake placeholders.",
+    "Green represents positive growth (use semantic.positive). Red represents negative drop (use semantic.negative).",
+    "Build 4 main tabs: Dashboard, Watchlist, Portfolio, Alerts.",
+    "Tools (SIP Calculator, Lumpsum Calculator) should be placed in the Dashboard or as a sub-route from the Dashboard.",
+    "Ensure the alerts badge on the bell icon uses the brand.accent (Terracotta) for maximum visibility."
+  ]
+}
