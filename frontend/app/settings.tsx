@@ -6,7 +6,6 @@ import {
   TextInput,
   TouchableOpacity,
   ScrollView,
-  Alert,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Feather } from "@expo/vector-icons";
@@ -14,6 +13,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { api } from "@/src/api";
 import { colors, radius, spacing, typography } from "@/src/theme";
+import { notify } from "@/src/utils/dialog";
 
 export default function Settings() {
   const router = useRouter();
@@ -28,13 +28,13 @@ export default function Settings() {
   const save = async () => {
     const v = parseFloat(threshold);
     if (isNaN(v) || v <= 0) {
-      Alert.alert("Invalid", "Enter a positive number");
+      notify("Invalid", "Enter a positive number");
       return;
     }
     setSaving(true);
     try {
       await api.updateSettings({ drop_threshold_pct: v });
-      Alert.alert("Saved", "Drop threshold updated.");
+      notify("Saved", "Drop threshold updated.");
     } finally {
       setSaving(false);
     }

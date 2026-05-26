@@ -7,7 +7,6 @@ import {
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
-  Alert,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Feather } from "@expo/vector-icons";
@@ -15,6 +14,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { api, formatINR } from "@/src/api";
 import { colors, radius, spacing, typography } from "@/src/theme";
+import { notify } from "@/src/utils/dialog";
 
 export default function AddHolding() {
   const router = useRouter();
@@ -30,7 +30,7 @@ export default function AddHolding() {
 
   const save = async () => {
     if (isNaN(u) || isNaN(p) || u <= 0 || p <= 0) {
-      Alert.alert("Invalid input", "Enter valid units and average buy price.");
+      notify("Invalid input", "Enter valid units and average buy price.");
       return;
     }
     setSaving(true);
@@ -39,7 +39,7 @@ export default function AddHolding() {
       router.dismissAll();
       router.replace("/(tabs)/portfolio");
     } catch (e: any) {
-      Alert.alert("Error", String(e.message || e));
+      notify("Error", String(e.message || e));
     } finally {
       setSaving(false);
     }

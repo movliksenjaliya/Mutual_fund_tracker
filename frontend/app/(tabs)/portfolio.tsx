@@ -5,7 +5,6 @@ import {
   StyleSheet,
   FlatList,
   TouchableOpacity,
-  Alert,
   RefreshControl,
   ActivityIndicator,
 } from "react-native";
@@ -16,6 +15,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { api, formatINR, formatPct } from "@/src/api";
 import { colors, radius, spacing, typography } from "@/src/theme";
 import ChangePill from "@/src/components/ChangePill";
+import { confirm } from "@/src/utils/dialog";
 
 export default function Portfolio() {
   const router = useRouter();
@@ -40,18 +40,11 @@ export default function Portfolio() {
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
-  const remove = (id: string, name: string) => {
-    Alert.alert("Remove holding?", name, [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Remove",
-        style: "destructive",
-        onPress: async () => {
-          await api.deletePortfolio(id);
-          load();
-        },
-      },
-    ]);
+  const remove = async (id: string, name: string) => {
+    const ok = await confirm("Remove holding?", name);
+    if (!ok) return;
+    await api.deletePortfolio(id);
+    load();
   };
 
   return (

@@ -5,7 +5,6 @@ import {
   StyleSheet,
   FlatList,
   TouchableOpacity,
-  Alert,
   RefreshControl,
   TextInput,
   Modal,
@@ -17,6 +16,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { api, formatINR } from "@/src/api";
 import { colors, radius, spacing, typography } from "@/src/theme";
 import ChangePill from "@/src/components/ChangePill";
+import { confirm } from "@/src/utils/dialog";
 
 export default function Watchlist() {
   const router = useRouter();
@@ -39,18 +39,11 @@ export default function Watchlist() {
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
-  const remove = (id: string, name: string) => {
-    Alert.alert("Remove from watchlist?", name, [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Remove",
-        style: "destructive",
-        onPress: async () => {
-          await api.deleteWatchlist(id);
-          load();
-        },
-      },
-    ]);
+  const remove = async (id: string, name: string) => {
+    const ok = await confirm("Remove from watchlist?", name);
+    if (!ok) return;
+    await api.deleteWatchlist(id);
+    load();
   };
 
   const openTarget = (id: string, current?: number | null) => {

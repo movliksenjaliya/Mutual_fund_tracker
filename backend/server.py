@@ -348,7 +348,9 @@ async def mark_all_read():
 
 @api_router.delete("/alerts/{alert_id}")
 async def delete_alert(alert_id: str):
-    await db.alerts.delete_one({"id": alert_id})
+    res = await db.alerts.delete_one({"id": alert_id})
+    if res.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Not found")
     return {"ok": True}
 
 

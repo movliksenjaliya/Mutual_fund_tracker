@@ -7,7 +7,6 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Dimensions,
-  Alert,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Feather } from "@expo/vector-icons";
@@ -17,6 +16,7 @@ import { api, formatINR } from "@/src/api";
 import { colors, radius, spacing, typography } from "@/src/theme";
 import LineChart from "@/src/components/LineChart";
 import ChangePill from "@/src/components/ChangePill";
+import { notify } from "@/src/utils/dialog";
 
 export default function FundDetail() {
   const router = useRouter();
@@ -49,9 +49,9 @@ export default function FundDetail() {
     setAdding(true);
     try {
       await api.addWatchlist({ scheme_code: code, scheme_name: summary.scheme_name });
-      Alert.alert("Added", "Fund added to your watchlist.");
+      notify("Added", "Fund added to your watchlist.");
     } catch (e: any) {
-      Alert.alert("Heads up", "Already in your watchlist.");
+      notify("Heads up", "Already in your watchlist.");
     } finally {
       setAdding(false);
     }
