@@ -307,6 +307,34 @@ def compute_xirr(cashflows: list, guess: float = 0.1, max_iter: int = 300, tol: 
                 return new_rate
             rate = new_rate
     return None
+    
+def compute_yearly_xirr(all_cashflows: list) -> dict:
+    """
+    Compute XIRR broken down by calendar year.
+    For year Y: take all cashflows from inception through Dec 31 of Y,
+    treat the last date's current value as terminal inflow.
+    Returns dict {year: xirr_pct}
+    """
+    if not all_cashflows:
+        return {}
+    cf_sorted = sorted(all_cashflows, key=lambda x: x[0])
+    min_year = cf_sorted[0][0].year
+    max_year = date.today().year
+    results = {}
+    for yr in range(min_year, max_year + 1):
+        cutoff = date(yr, 12, 31)
+        year_cf = [(d, a) for d, a in cf_sorted if d <= cutoff]
+        if not year_cf:
+            continue
+        # The last entry must be a positive terminal inflow
+        # If all are negative (only buys, no terminal yet), skip
+        if not any(a > 0 for _, a in year_cf):
+            continue
+        r = compute_xirr(year_cf)
+        if r is not None and -1 < r < 100:
+            results[yr] = round(r * 100, 2)
+    return results
+    
 
 def get_holding_cashflows(item: dict, today: date, current_value: float) -> list:
     """Build cashflow list for XIRR for a single holding."""
