@@ -260,10 +260,8 @@ def compute_rolling_returns(history: list) -> dict:
     return out
 
 
-def compute_xirr(cashflows: list, guess: float = 0.1, max_iter: int = 100, tol: float = 1e-6):
-    """XIRR for a list of (date, amount) tuples. Negative = outflow (buy),
-    positive = inflow (current value or sale). Returns annualized rate or None.
-    """
+def compute_xirr(cashflows: list, guess: float = 0.1, max_iter: int = 300, tol: float = 1e-8):
+    """XIRR using Newton-Raphson with multiple starting guesses for robustness."""
     if len(cashflows) < 2:
         return None
     cf = sorted(cashflows, key=lambda x: x[0])
@@ -273,45 +271,42 @@ def compute_xirr(cashflows: list, guess: float = 0.1, max_iter: int = 100, tol: 
         return None
     d0 = cf[0][0]
 
-    def npv(rate: float) -> float:
+    def xnpv(rate: float) -> float:
         if rate <= -1.0:
             return float("inf")
         total = 0.0
         for d, a in cf:
-            t = (d - d0).days / 365.0
+            t = (d - d0).days / 365.25
             total += a / ((1 + rate) ** t)
         return total
 
-    def dnpv(rate: float) -> float:
+    def dxnpv(rate: float) -> float:
         if rate <= -1.0:
             return 0.0
         total = 0.0
         for d, a in cf:
-            t = (d - d0).days / 365.0
+            t = (d - d0).days / 365.25
             if t == 0:
                 continue
             total += -t * a / ((1 + rate) ** (t + 1))
         return total
 
-    rate = guess
-    for _ in range(max_iter):
-        f = npv(rate)
-        df = dnpv(rate)
-        if abs(df) < 1e-12:
-            break
-        new_rate = rate - f / df
-        if rate <= -0.999:
-            new_rate = -0.9
-        if abs(new_rate - rate) < tol:
-            return new_rate
-        rate = new_rate
-    try:
-        if abs(npv(rate)) < 1.0:
-            return rate
-    except Exception:
-        return None
+    for start_guess in [guess, 0.0, 0.05, 0.2, 0.5, -0.1, -0.5]:
+        rate = start_guess
+        for _ in range(max_iter):
+            f = xnpv(rate)
+            df = dxnpv(rate)
+            if abs(df) < 1e-12:
+                break
+            new_rate = rate - f / df
+            if new_rate < -0.999:
+                new_rate = -0.5
+            if new_rate > 100:
+                new_rate = 10
+            if abs(new_rate - rate) < tol and abs(f) < tol:
+                return new_rate
+            rate = new_rate
     return None
-
 
 def get_holding_cashflows(item: dict, today: date, current_value: float) -> list:
     """Build cashflow list for XIRR for a single holding."""
