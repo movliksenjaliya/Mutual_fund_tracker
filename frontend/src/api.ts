@@ -28,10 +28,12 @@ export const api = {
   deleteWatchlist: (id: string) => request<any>(`/watchlist/${id}`, { method: "DELETE" }),
   // portfolio
   portfolio: () => request<{ items: any[]; summary: any }>(`/portfolio`),
-  addPortfolio: (body: { scheme_code: string; scheme_name: string; units: number; avg_buy_price: number }) =>
+  addPortfolio: (body: { scheme_code: string; scheme_name: string; units: number; avg_buy_price: number; purchase_date?: string | null; notes?: string | null }) =>
     request<any>(`/portfolio`, { method: "POST", body: JSON.stringify(body) }),
-  updatePortfolio: (id: string, body: { units?: number; avg_buy_price?: number }) =>
+  updatePortfolio: (id: string, body: { units?: number; avg_buy_price?: number; purchase_date?: string | null; notes?: string | null }) =>
     request<any>(`/portfolio/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
+  buyMore: (id: string, body: { units: number; price: number }) =>
+    request<{ units: number; avg_buy_price: number }>(`/portfolio/${id}/buy-more`, { method: "POST", body: JSON.stringify(body) }),
   deletePortfolio: (id: string) => request<any>(`/portfolio/${id}`, { method: "DELETE" }),
   // alerts
   alerts: () => request<{ items: any[]; unread_count: number }>(`/alerts`),

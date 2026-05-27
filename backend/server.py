@@ -26,8 +26,13 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(level
 logger = logging.getLogger(__name__)
 
 MFAPI_BASE = "https://api.mfapi.in/mf"
+AMFI_NAV_URL = "https://www.amfiindia.com/spages/NAVAll.txt"
 NIFTY_INDEX_SCHEME_CODE = "120716"  # UTI Nifty 50 Index Fund - Direct Plan - Growth
 DEFAULT_THRESHOLD = 1.0
+
+# AMFI NAV cache: {scheme_code: {"nav": float, "date": str, "name": str}}
+_amfi_cache: dict = {"data": {}, "fetched_at": 0.0}
+_AMFI_TTL = 3600  # 1 hour
 
 # ---------- Models ----------
 
@@ -55,6 +60,8 @@ class PortfolioHolding(BaseModel):
     scheme_name: str
     units: float
     avg_buy_price: float
+    purchase_date: Optional[str] = None
+    notes: Optional[str] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
@@ -63,11 +70,20 @@ class PortfolioCreate(BaseModel):
     scheme_name: str
     units: float
     avg_buy_price: float
+    purchase_date: Optional[str] = None
+    notes: Optional[str] = None
 
 
 class PortfolioUpdate(BaseModel):
     units: Optional[float] = None
     avg_buy_price: Optional[float] = None
+    purchase_date: Optional[str] = None
+    notes: Optional[str] = None
+
+
+class BuyMoreRequest(BaseModel):
+    units: float
+    price: float
 
 
 class Alert(BaseModel):
@@ -93,15 +109,79 @@ class SettingsUpdate(BaseModel):
 # ---------- Helpers ----------
 
 async def fetch_scheme(scheme_code: str) -> dict:
-    """Fetch full scheme detail from mfapi.in (includes NAV history)."""
-    async with httpx.AsyncClient(timeout=20.0) as hc:
-        r = await hc.get(f"{MFAPI_BASE}/{scheme_code}")
-        if r.status_code != 200:
-            raise HTTPException(status_code=502, detail=f"mfapi error: {r.status_code}")
-        data = r.json()
-        if not data or not data.get("data"):
-            raise HTTPException(status_code=404, detail="Scheme not found")
-        return data
+    """Fetch full scheme detail. Tries mfapi.in (with retry); falls back to AMFI NAVAll.txt
+    for current-day NAV when mfapi.in is unavailable."""
+    last_err: Optional[Exception] = None
+    for attempt in range(3):
+        try:
+            async with httpx.AsyncClient(timeout=15.0) as hc:
+                r = await hc.get(f"{MFAPI_BASE}/{scheme_code}")
+                if r.status_code == 200:
+                    data = r.json()
+                    if data and data.get("data"):
+                        return data
+            last_err = HTTPException(status_code=502, detail=f"mfapi http {r.status_code}")
+        except Exception as e:
+            last_err = e
+        await asyncio.sleep(0.5 * (attempt + 1))
+
+    # Fallback: AMFI NAVAll.txt
+    try:
+        amfi = await fetch_amfi_nav_map()
+        entry = amfi.get(scheme_code)
+        if entry:
+            logger.info(f"AMFI fallback used for {scheme_code}")
+            return {
+                "meta": {
+                    "scheme_code": int(scheme_code) if scheme_code.isdigit() else scheme_code,
+                    "scheme_name": entry["name"],
+                    "fund_house": "",
+                    "scheme_category": "",
+                    "scheme_type": "",
+                },
+                "data": [
+                    {"date": entry["date"], "nav": str(entry["nav"])},
+                    {"date": entry["date"], "nav": str(entry["nav"])},
+                ],
+                "_source": "amfi",
+            }
+    except Exception as e:
+        logger.warning(f"AMFI fallback failed for {scheme_code}: {e}")
+
+    if isinstance(last_err, HTTPException):
+        raise last_err
+    raise HTTPException(status_code=502, detail=f"NAV providers unavailable: {last_err}")
+
+
+async def fetch_amfi_nav_map() -> dict:
+    """Download and parse the AMFI daily NAV dump, cached for 1 hour."""
+    import time
+    now = time.time()
+    if _amfi_cache["data"] and (now - _amfi_cache["fetched_at"]) < _AMFI_TTL:
+        return _amfi_cache["data"]
+
+    async with httpx.AsyncClient(timeout=30.0) as hc:
+        r = await hc.get(AMFI_NAV_URL)
+        r.raise_for_status()
+        text = r.text
+
+    result: dict = {}
+    for line in text.splitlines():
+        parts = line.split(";")
+        if len(parts) >= 6 and parts[0].strip().isdigit():
+            code = parts[0].strip()
+            name = parts[3].strip()
+            try:
+                nav = float(parts[4].strip())
+            except ValueError:
+                continue
+            date = parts[5].strip()
+            result[code] = {"nav": nav, "date": date, "name": name}
+
+    _amfi_cache["data"] = result
+    _amfi_cache["fetched_at"] = now
+    logger.info(f"AMFI cache refreshed: {len(result)} schemes")
+    return result
 
 
 def parse_nav_summary(scheme_data: dict) -> dict:
@@ -299,6 +379,24 @@ async def delete_portfolio(item_id: str):
     if res.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Not found")
     return {"ok": True}
+
+
+@api_router.post("/portfolio/{item_id}/buy-more")
+async def buy_more(item_id: str, body: BuyMoreRequest):
+    """Add more units to a holding and recompute the weighted average buy price."""
+    if body.units <= 0 or body.price <= 0:
+        raise HTTPException(status_code=400, detail="Units and price must be positive")
+    doc = await db.portfolio.find_one({"id": item_id}, {"_id": 0})
+    if not doc:
+        raise HTTPException(status_code=404, detail="Not found")
+    new_units = doc["units"] + body.units
+    new_invested = doc["units"] * doc["avg_buy_price"] + body.units * body.price
+    new_avg = new_invested / new_units
+    await db.portfolio.update_one(
+        {"id": item_id},
+        {"$set": {"units": round(new_units, 6), "avg_buy_price": round(new_avg, 4)}},
+    )
+    return {"units": round(new_units, 6), "avg_buy_price": round(new_avg, 4)}
 
 
 # ----- Best buy opportunities -----

@@ -30,6 +30,7 @@ export default function RootLayout() {
         <Stack.Screen name="tools/lumpsum" />
         <Stack.Screen name="settings" />
         <Stack.Screen name="add-holding" options={{ presentation: "modal" }} />
+        <Stack.Screen name="edit-holding/[id]" />
       </Stack>
     </SafeAreaProvider>
   );

@@ -15,7 +15,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { api, formatINR, formatPct } from "@/src/api";
 import { colors, radius, spacing, typography } from "@/src/theme";
 import ChangePill from "@/src/components/ChangePill";
-import { confirm } from "@/src/utils/dialog";
 
 export default function Portfolio() {
   const router = useRouter();
@@ -39,13 +38,6 @@ export default function Portfolio() {
   }, []);
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
-
-  const remove = async (id: string, name: string) => {
-    const ok = await confirm("Remove holding?", name);
-    if (!ok) return;
-    await api.deletePortfolio(id);
-    load();
-  };
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -112,15 +104,15 @@ export default function Portfolio() {
               testID={`portfolio-item-${item.scheme_code}`}
               activeOpacity={0.9}
               style={styles.card}
-              onPress={() => router.push(`/fund/${item.scheme_code}`)}
+              onPress={() => router.push(`/edit-holding/${item.id}`)}
             >
               <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" }}>
                 <Text style={[typography.bodyMedium, { fontWeight: "600", flex: 1, paddingRight: spacing.p3 }]} numberOfLines={2}>
                   {item.scheme_name}
                 </Text>
-                <TouchableOpacity testID={`portfolio-remove-${item.scheme_code}`} onPress={() => remove(item.id, item.scheme_name)} hitSlop={10}>
-                  <Feather name="x" size={18} color={colors.textTertiary} />
-                </TouchableOpacity>
+                <View style={styles.editIcon} testID={`portfolio-edit-${item.scheme_code}`}>
+                  <Feather name="edit-2" size={14} color={colors.brand} />
+                </View>
               </View>
               <View style={styles.gridRow}>
                 <View style={styles.gridCell}>
@@ -210,4 +202,12 @@ const styles = StyleSheet.create({
   gridRow: { flexDirection: "row", marginTop: spacing.p4, gap: spacing.p3 },
   gridCell: { flex: 1 },
   empty: { alignItems: "center", paddingTop: 60, paddingHorizontal: spacing.p6 },
+  editIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: radius.pill,
+    backgroundColor: colors.positiveBg,
+    alignItems: "center",
+    justifyContent: "center",
+  },
 });
