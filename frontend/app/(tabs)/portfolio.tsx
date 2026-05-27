@@ -129,7 +129,6 @@ export default function Portfolio() {
                       </Text>
                     </View>
                   )}
-                </View>
                
                 {summary?.yearly_xirr && Object.keys(summary.yearly_xirr).length > 0 && (
                     <View style={{ marginTop: spacing.p3 }}>
@@ -170,7 +169,7 @@ export default function Portfolio() {
                       </View>
                     </View>
                   )}
-
+                </View>
                 <View style={[styles.summaryRow, { borderTopColor: colors.borderLight }]}>
                   <View style={styles.summaryCol}>
                     <Text style={[typography.bodySmall, { color: colors.textSecondary }]}>Invested</Text>
