@@ -118,7 +118,7 @@ export default function Settings() {
         <View style={[styles.aboutCard, { backgroundColor: colors.bgSecondary }]}>
           <Text style={[typography.overline, { color: colors.textSecondary }]}>ABOUT</Text>
           <Text style={[typography.bodyMedium, { marginTop: spacing.p2, color: colors.textPrimary }]}>
-            NAV data is sourced from the public AMFI feed via mfapi.in (with AMFI's official
+            NAV data is sourced from the public AMFI feed via mfapi.in (with AMFI&apos;s official
             NAVAll.txt as a fallback). Alerts are checked automatically every 30 minutes;
             pull-to-refresh on Alerts checks immediately.
           </Text>

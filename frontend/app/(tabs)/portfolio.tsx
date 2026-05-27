@@ -130,7 +130,7 @@ export default function Portfolio() {
                     </Text>
                   </View>
                   <Text style={[typography.bodySmall, { color: colors.textSecondary, marginTop: 4 }]}>
-                    From today's value of {formatINR(summary?.total_current)}, if your funds grow at:
+                    From today&apos;s value of {formatINR(summary?.total_current)}, if your funds grow at:
                   </Text>
                   <View style={styles.projRow}>
                     {projections.map((p) => (
