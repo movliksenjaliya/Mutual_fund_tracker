@@ -16,6 +16,7 @@ export const api = {
   // funds
   searchFunds: (q: string) => request<{ results: { schemeCode: number; schemeName: string }[] }>(`/funds/search?q=${encodeURIComponent(q)}`),
   fundDetail: (code: string) => request<{ summary: any; history: { date: string; nav: string }[] }>(`/funds/${code}`),
+  fundReturns: (code: string) => request<{ scheme_code: string; returns: Record<string, number | null> }>(`/funds/${code}/returns`),
   // dashboard
   nifty: () => request<{ summary: any; history: { date: string; nav: string }[] }>(`/dashboard/nifty`),
   bestBuys: () => request<{ items: any[] }>(`/dashboard/best-buys`),

@@ -15,6 +15,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { api, formatINR, formatPct } from "@/src/api";
 import { useColors, useTypography, radius, spacing } from "@/src/theme";
 import ChangePill from "@/src/components/ChangePill";
+import PieChart from "@/src/components/PieChart";
 
 // Smart number formatter — show up to N significant decimals, strip trailing zeros.
 function fmtNum(n: number | null | undefined, maxFractionDigits = 4): string {
@@ -97,12 +98,37 @@ export default function Portfolio() {
                 <Text style={[typography.financialLarge, { marginTop: 4, color: colors.textPrimary }]} testID="portfolio-total-current">
                   {formatINR(summary?.total_current)}
                 </Text>
-                <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.p2, marginTop: spacing.p2 }}>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.p2, marginTop: spacing.p2, flexWrap: "wrap" }}>
                   <ChangePill changePct={summary?.total_pnl_pct} />
                   <Text style={[typography.bodySmall, { color: colors.textSecondary }]}>
                     {(summary?.total_pnl ?? 0) >= 0 ? "+" : ""}
                     {formatINR(summary?.total_pnl)}
                   </Text>
+                  {summary?.total_xirr != null && (
+                    <View
+                      style={[
+                        styles.xirrBadge,
+                        {
+                          backgroundColor: summary.total_xirr >= 0 ? colors.positiveBg : colors.negativeBg,
+                        },
+                      ]}
+                      testID="portfolio-xirr"
+                    >
+                      <Feather
+                        name="percent"
+                        size={11}
+                        color={summary.total_xirr >= 0 ? colors.positive : colors.negative}
+                      />
+                      <Text
+                        style={[
+                          typography.bodySmall,
+                          { fontWeight: "700", marginLeft: 4, color: summary.total_xirr >= 0 ? colors.positive : colors.negative },
+                        ]}
+                      >
+                        XIRR {summary.total_xirr >= 0 ? "+" : ""}{summary.total_xirr.toFixed(2)}%
+                      </Text>
+                    </View>
+                  )}
                 </View>
                 <View style={[styles.summaryRow, { borderTopColor: colors.borderLight }]}>
                   <View style={styles.summaryCol}>
@@ -117,6 +143,38 @@ export default function Portfolio() {
                   </View>
                 </View>
               </View>
+
+              {/* Category allocation */}
+              {summary?.category_breakdown && summary.category_breakdown.length > 0 && (
+                <View style={[styles.allocCard, { backgroundColor: colors.surface, borderColor: colors.borderLight }]} testID="category-breakdown">
+                  <Text style={[typography.overline, { color: colors.textSecondary }]}>ALLOCATION</Text>
+                  <Text style={[typography.bodyMedium, { fontWeight: "600", marginTop: 2, color: colors.textPrimary }]}>
+                    By fund category
+                  </Text>
+                  <View style={styles.allocBody}>
+                    <PieChart
+                      size={140}
+                      thickness={20}
+                      data={summary.category_breakdown.map((c: any) => ({ value: c.value, color: c.color }))}
+                    />
+                    <View style={styles.allocLegend}>
+                      {summary.category_breakdown.map((c: any) => (
+                        <View key={c.category} style={styles.legendRow} testID={`category-${c.category}`}>
+                          <View style={[styles.legendSwatch, { backgroundColor: c.color }]} />
+                          <View style={{ flex: 1, marginLeft: spacing.p2 }}>
+                            <Text style={[typography.bodySmall, { color: colors.textPrimary, fontWeight: "600" }]} numberOfLines={1}>
+                              {c.category.replace(/^Equity Scheme - /, "").replace(/^Other Scheme - /, "")}
+                            </Text>
+                            <Text style={[typography.bodySmall, { color: colors.textSecondary, fontSize: 11 }]}>
+                              {formatINR(c.value)} · {c.pct.toFixed(1)}%
+                            </Text>
+                          </View>
+                        </View>
+                      ))}
+                    </View>
+                  </View>
+                </View>
+              )}
 
               {/* Projected returns */}
               {projections.length > 0 && (
@@ -173,6 +231,30 @@ export default function Portfolio() {
                   <Feather name="edit-2" size={14} color={colors.brand} />
                 </View>
               </View>
+              {item.xirr != null && (
+                <View style={{ flexDirection: "row", marginTop: 4 }}>
+                  <View
+                    style={[
+                      styles.holdingXirr,
+                      { backgroundColor: item.xirr >= 0 ? colors.positiveBg : colors.negativeBg },
+                    ]}
+                    testID={`holding-xirr-${item.scheme_code}`}
+                  >
+                    <Text
+                      style={[
+                        typography.bodySmall,
+                        {
+                          fontWeight: "700",
+                          fontSize: 11,
+                          color: item.xirr >= 0 ? colors.positive : colors.negative,
+                        },
+                      ]}
+                    >
+                      XIRR {item.xirr >= 0 ? "+" : ""}{item.xirr.toFixed(2)}%
+                    </Text>
+                  </View>
+                </View>
+              )}
               <View style={styles.gridRow}>
                 <View style={styles.gridCell}>
                   <Text style={[typography.bodySmall, { color: colors.textSecondary }]}>Units</Text>
@@ -246,4 +328,22 @@ const styles = StyleSheet.create({
   gridCell: { flex: 1 },
   empty: { alignItems: "center", paddingTop: 60, paddingHorizontal: spacing.p6 },
   editIcon: { width: 28, height: 28, borderRadius: radius.pill, alignItems: "center", justifyContent: "center" },
+  xirrBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: radius.pill,
+  },
+  holdingXirr: {
+    alignSelf: "flex-start",
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: radius.pill,
+  },
+  allocCard: { borderWidth: 1, borderRadius: radius.lg, padding: spacing.p4, marginBottom: spacing.p4 },
+  allocBody: { flexDirection: "row", alignItems: "center", marginTop: spacing.p3, gap: spacing.p3 },
+  allocLegend: { flex: 1 },
+  legendRow: { flexDirection: "row", alignItems: "center", marginBottom: spacing.p2 },
+  legendSwatch: { width: 12, height: 12, borderRadius: 3 },
 });

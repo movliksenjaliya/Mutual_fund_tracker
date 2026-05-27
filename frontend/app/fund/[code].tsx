@@ -26,6 +26,7 @@ export default function FundDetail() {
   const styles = stylesFactory(colors);
   const { code } = useLocalSearchParams<{ code: string }>();
   const [data, setData] = useState<any>(null);
+  const [returns, setReturns] = useState<Record<string, number | null> | null>(null);
   const [range, setRange] = useState<7 | 30 | 90>(30);
   const [adding, setAdding] = useState(false);
 
@@ -34,6 +35,10 @@ export default function FundDetail() {
       .fundDetail(code)
       .then(setData)
       .catch((e) => console.warn(e));
+    api
+      .fundReturns(code)
+      .then((r) => setReturns(r.returns))
+      .catch((e) => console.warn("returns fetch", e));
   }, [code]);
 
   if (!data) {
@@ -110,6 +115,49 @@ export default function FundDetail() {
         </View>
       </View>
 
+      {/* Rolling Returns */}
+      <View style={[styles.card, { padding: spacing.p4 }]} testID="returns-card">
+        <View style={{ flexDirection: "row", alignItems: "center", marginBottom: spacing.p3 }}>
+          <Feather name="bar-chart-2" size={16} color={colors.brand} />
+          <Text style={[typography.overline, { color: colors.textSecondary, marginLeft: spacing.p2 }]}>
+            ROLLING RETURNS
+          </Text>
+        </View>
+        {returns ? (
+          <View style={styles.returnsGrid}>
+            {(["1M", "3M", "6M", "1Y", "3Y", "5Y"] as const).map((label) => {
+              const v = returns[label];
+              const isCagr = label === "3Y" || label === "5Y";
+              const isAvail = v != null && !isNaN(v);
+              const color = !isAvail
+                ? colors.textTertiary
+                : (v as number) >= 0
+                ? colors.positive
+                : colors.negative;
+              return (
+                <View key={label} style={[styles.returnCell, { borderColor: colors.borderLight }]} testID={`return-${label}`}>
+                  <Text style={[typography.bodySmall, { color: colors.textSecondary }]}>{label}</Text>
+                  <Text
+                    style={[typography.bodyLarge, { fontWeight: "700", marginTop: 2, color }]}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                  >
+                    {isAvail ? `${(v as number) >= 0 ? "+" : ""}${(v as number).toFixed(2)}%` : "—"}
+                  </Text>
+                  {isAvail && isCagr && (
+                    <Text style={[typography.bodySmall, { color: colors.textTertiary, fontSize: 10 }]}>
+                      CAGR
+                    </Text>
+                  )}
+                </View>
+              );
+            })}
+          </View>
+        ) : (
+          <ActivityIndicator color={colors.brand} style={{ marginVertical: spacing.p2 }} />
+        )}
+      </View>
+
       <View style={{ flexDirection: "row", gap: spacing.p3, marginHorizontal: spacing.p6, marginTop: spacing.p4 }}>
         <TouchableOpacity
           testID="add-watchlist-btn"
@@ -168,4 +216,12 @@ const stylesFactory = (colors: any) => StyleSheet.create({
   },
   actionPrimary: { backgroundColor: colors.brand },
   actionSecondary: { borderWidth: 1, borderColor: colors.brand, backgroundColor: colors.surface },
+  returnsGrid: { flexDirection: "row", flexWrap: "wrap", gap: spacing.p2 },
+  returnCell: {
+    flexBasis: "31%",
+    flexGrow: 1,
+    padding: spacing.p3,
+    borderRadius: radius.md,
+    borderWidth: 1,
+  },
 });

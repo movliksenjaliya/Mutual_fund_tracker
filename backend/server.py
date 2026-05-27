@@ -10,7 +10,7 @@ from pathlib import Path
 from pydantic import BaseModel, Field
 from typing import List, Optional
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timezone, date, timedelta
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / ".env")
@@ -210,6 +210,166 @@ def parse_nav_summary(scheme_data: dict) -> dict:
     }
 
 
+def parse_mfapi_date(s: str):
+    """Parse 'DD-MM-YYYY' to date or None."""
+    try:
+        d, m, y = s.split("-")
+        return date(int(y), int(m), int(d))
+    except Exception:
+        return None
+
+
+def compute_rolling_returns(history: list) -> dict:
+    """Compute 1M/3M/6M/1Y/3Y/5Y returns from NAV history.
+
+    history: list of {date: 'DD-MM-YYYY', nav: 'string'} (newest first from mfapi).
+    Returns dict like {"1M": 1.23, "1Y": 12.5, ...}. Values are absolute % for <=1Y,
+    CAGR % for >1Y. None if not enough history.
+    """
+    points: list = []
+    for h in history:
+        d = parse_mfapi_date(h.get("date", ""))
+        try:
+            nav = float(h.get("nav"))
+        except (TypeError, ValueError):
+            continue
+        if d and nav > 0:
+            points.append((d, nav))
+    if not points:
+        return {}
+    points.sort(key=lambda x: x[0], reverse=True)
+    today_d, today_nav = points[0]
+    periods = [("1M", 30), ("3M", 91), ("6M", 182), ("1Y", 365), ("3Y", 365 * 3), ("5Y", 365 * 5)]
+    out: dict = {}
+    for label, days_back in periods:
+        target = today_d - timedelta(days=days_back)
+        ref = next(((d, n) for d, n in points if d <= target), None)
+        if not ref:
+            out[label] = None
+            continue
+        _, ref_nav = ref
+        if ref_nav <= 0:
+            out[label] = None
+            continue
+        if days_back <= 365:
+            ret = (today_nav / ref_nav - 1) * 100
+        else:
+            years = days_back / 365.0
+            ret = ((today_nav / ref_nav) ** (1 / years) - 1) * 100
+        out[label] = round(ret, 2)
+    return out
+
+
+def compute_xirr(cashflows: list, guess: float = 0.1, max_iter: int = 100, tol: float = 1e-6):
+    """XIRR for a list of (date, amount) tuples. Negative = outflow (buy),
+    positive = inflow (current value or sale). Returns annualized rate or None.
+    """
+    if len(cashflows) < 2:
+        return None
+    cf = sorted(cashflows, key=lambda x: x[0])
+    has_neg = any(c[1] < 0 for c in cf)
+    has_pos = any(c[1] > 0 for c in cf)
+    if not (has_neg and has_pos):
+        return None
+    d0 = cf[0][0]
+
+    def npv(rate: float) -> float:
+        if rate <= -1.0:
+            return float("inf")
+        total = 0.0
+        for d, a in cf:
+            t = (d - d0).days / 365.0
+            total += a / ((1 + rate) ** t)
+        return total
+
+    def dnpv(rate: float) -> float:
+        if rate <= -1.0:
+            return 0.0
+        total = 0.0
+        for d, a in cf:
+            t = (d - d0).days / 365.0
+            if t == 0:
+                continue
+            total += -t * a / ((1 + rate) ** (t + 1))
+        return total
+
+    rate = guess
+    for _ in range(max_iter):
+        f = npv(rate)
+        df = dnpv(rate)
+        if abs(df) < 1e-12:
+            break
+        new_rate = rate - f / df
+        if rate <= -0.999:
+            new_rate = -0.9
+        if abs(new_rate - rate) < tol:
+            return new_rate
+        rate = new_rate
+    try:
+        if abs(npv(rate)) < 1.0:
+            return rate
+    except Exception:
+        return None
+    return None
+
+
+def get_holding_cashflows(item: dict, today: date, current_value: float) -> list:
+    """Build cashflow list for XIRR for a single holding."""
+    txns = item.get("transactions") or []
+    cashflows: list = []
+    if txns:
+        for t in txns:
+            tdate = None
+            if t.get("date"):
+                # accept either YYYY-MM-DD or DD-MM-YYYY
+                s = t["date"]
+                try:
+                    if "-" in s and len(s.split("-")[0]) == 4:
+                        tdate = date.fromisoformat(s[:10])
+                    else:
+                        tdate = parse_mfapi_date(s)
+                except Exception:
+                    tdate = None
+            if not tdate:
+                continue
+            amt = float(t.get("units", 0)) * float(t.get("price", 0))
+            cashflows.append((tdate, -amt))
+    else:
+        # Legacy/synthetic: single buy transaction
+        pdate_str = item.get("purchase_date")
+        tdate = None
+        if pdate_str:
+            try:
+                tdate = date.fromisoformat(pdate_str[:10])
+            except Exception:
+                tdate = None
+        if not tdate:
+            created = item.get("created_at")
+            if isinstance(created, datetime):
+                tdate = created.date()
+            elif isinstance(created, str):
+                try:
+                    tdate = datetime.fromisoformat(created.replace("Z", "+00:00")).date()
+                except Exception:
+                    tdate = None
+        if not tdate:
+            return []
+        invested = float(item.get("units", 0)) * float(item.get("avg_buy_price", 0))
+        cashflows.append((tdate, -invested))
+    if not cashflows:
+        return []
+    cashflows.append((today, float(current_value)))
+    return cashflows
+
+
+# Stable color palette for category pie chart (works in both light & dark themes)
+_CATEGORY_COLORS = [
+    "#2F6F4E", "#4F8FBF", "#D08B3A", "#8E5BB8",
+    "#C04E5F", "#1F9D8B", "#B8843D", "#5C7CFA",
+    "#E8794C", "#7BAA39",
+]
+
+
 async def get_settings_doc() -> dict:
     doc = await db.settings.find_one({"_id": "global"}, {"_id": 0})
     if not doc:
@@ -244,6 +404,15 @@ async def get_fund_detail(scheme_code: str):
     summary = parse_nav_summary(data)
     history = data.get("data", [])[:90]  # last 90 entries (~3 months)
     return {"summary": summary, "history": history}
+
+
+@api_router.get("/funds/{scheme_code}/returns")
+async def get_fund_returns(scheme_code: str):
+    """Return rolling returns (1M/3M/6M/1Y/3Y/5Y) for a fund."""
+    data = await fetch_scheme(scheme_code)
+    history = data.get("data", [])
+    returns = compute_rolling_returns(history)
+    return {"scheme_code": scheme_code, "returns": returns}
 
 
 @api_router.get("/funds/{scheme_code}/nav")
@@ -314,6 +483,7 @@ async def delete_watchlist(item_id: str):
 @api_router.get("/portfolio")
 async def list_portfolio():
     items = await db.portfolio.find({}, {"_id": 0}).sort("created_at", -1).to_list(500)
+    today = datetime.now(timezone.utc).date()
 
     async def enrich_one(item: dict) -> dict:
         invested = item["units"] * item["avg_buy_price"]
@@ -329,13 +499,26 @@ async def list_portfolio():
             pnl_pct = (pnl / invested) * 100 if invested else 0.0
         except Exception as e:
             logger.warning(f"Portfolio NAV failed {item['scheme_code']}: {e}")
+        # XIRR for this holding
+        cashflows = get_holding_cashflows(item, today, current_value)
+        xirr = None
+        if cashflows:
+            try:
+                r = compute_xirr(cashflows)
+                xirr = round(r * 100, 2) if r is not None else None
+            except Exception as e:
+                logger.warning(f"XIRR failed {item['scheme_code']}: {e}")
+        category = (nav.get("scheme_category") if nav else "") or "Uncategorised"
         return {
             **item,
             "invested": round(invested, 2),
             "current_value": round(current_value, 2),
             "pnl": round(pnl, 2),
             "pnl_pct": round(pnl_pct, 4),
+            "xirr": xirr,
+            "category": category,
             "nav": nav,
+            "_cashflows": cashflows,  # internal, stripped before return
         }
 
     enriched = list(await asyncio.gather(*(enrich_one(it) for it in items)))
@@ -343,6 +526,39 @@ async def list_portfolio():
     total_current = sum(e["current_value"] for e in enriched)
     total_pnl = total_current - total_invested
     total_pnl_pct = (total_pnl / total_invested) * 100 if total_invested else 0.0
+
+    # Total XIRR: sum all per-holding cashflows
+    all_cf: list = []
+    for e in enriched:
+        all_cf.extend(e.get("_cashflows") or [])
+    total_xirr = None
+    if all_cf:
+        try:
+            r = compute_xirr(all_cf)
+            total_xirr = round(r * 100, 2) if r is not None else None
+        except Exception as ex:
+            logger.warning(f"Total XIRR failed: {ex}")
+
+    # Category breakdown (by current_value)
+    cat_map: dict = {}
+    for e in enriched:
+        c = e.get("category") or "Uncategorised"
+        cat_map[c] = cat_map.get(c, 0.0) + e["current_value"]
+    cat_list = sorted(cat_map.items(), key=lambda x: x[1], reverse=True)
+    category_breakdown = []
+    for idx, (c, v) in enumerate(cat_list):
+        pct = (v / total_current * 100) if total_current else 0.0
+        category_breakdown.append({
+            "category": c,
+            "value": round(v, 2),
+            "pct": round(pct, 2),
+            "color": _CATEGORY_COLORS[idx % len(_CATEGORY_COLORS)],
+        })
+
+    # Strip internal cashflow data before returning
+    for e in enriched:
+        e.pop("_cashflows", None)
+
     return {
         "items": enriched,
         "summary": {
@@ -350,6 +566,8 @@ async def list_portfolio():
             "total_current": round(total_current, 2),
             "total_pnl": round(total_pnl, 2),
             "total_pnl_pct": round(total_pnl_pct, 4),
+            "total_xirr": total_xirr,
+            "category_breakdown": category_breakdown,
         },
     }
 
@@ -357,7 +575,16 @@ async def list_portfolio():
 @api_router.post("/portfolio", response_model=PortfolioHolding)
 async def add_portfolio(body: PortfolioCreate):
     item = PortfolioHolding(**body.model_dump())
-    await db.portfolio.insert_one(item.model_dump())
+    doc = item.model_dump()
+    # Seed initial transaction for XIRR
+    txn_date = body.purchase_date or doc["created_at"].date().isoformat()
+    doc["transactions"] = [{
+        "date": txn_date,
+        "units": float(body.units),
+        "price": float(body.avg_buy_price),
+        "kind": "buy",
+    }]
+    await db.portfolio.insert_one(doc)
     return item
 
 
@@ -392,9 +619,20 @@ async def buy_more(item_id: str, body: BuyMoreRequest):
     new_units = doc["units"] + body.units
     new_invested = doc["units"] * doc["avg_buy_price"] + body.units * body.price
     new_avg = new_invested / new_units
+    today_iso = datetime.now(timezone.utc).date().isoformat()
     await db.portfolio.update_one(
         {"id": item_id},
-        {"$set": {"units": new_units, "avg_buy_price": new_avg}},
+        {
+            "$set": {"units": new_units, "avg_buy_price": new_avg},
+            "$push": {
+                "transactions": {
+                    "date": today_iso,
+                    "units": float(body.units),
+                    "price": float(body.price),
+                    "kind": "buy",
+                }
+            },
+        },
     )
     return {"units": new_units, "avg_buy_price": new_avg}
 
