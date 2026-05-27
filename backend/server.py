@@ -394,9 +394,9 @@ async def buy_more(item_id: str, body: BuyMoreRequest):
     new_avg = new_invested / new_units
     await db.portfolio.update_one(
         {"id": item_id},
-        {"$set": {"units": round(new_units, 6), "avg_buy_price": round(new_avg, 4)}},
+        {"$set": {"units": new_units, "avg_buy_price": new_avg}},
     )
-    return {"units": round(new_units, 6), "avg_buy_price": round(new_avg, 4)}
+    return {"units": new_units, "avg_buy_price": new_avg}
 
 
 # ----- Best buy opportunities -----

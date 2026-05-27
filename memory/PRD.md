@@ -76,6 +76,14 @@ AMFI's official NAVAll.txt (fallback).
 `POST /api/portfolio/{id}/buy-more` with `{units, price}`.
 Computes new weighted avg: `(old_units * old_avg + new_units * new_price) / total_units`.
 
+## Theming (Light + Dark)
+- Toggle in **Settings → Theme** switches between light (forest-green) and dark (deep moss) palettes.
+- Persists across sessions via `localStorage` (`mft_theme` key).
+- Web auto-defaults to user's OS dark-mode preference if no manual choice.
+- Status bar, tab bar, settings page, and dashboard chrome fully themed.
+  Inner content cards (watchlist, portfolio rows, alerts list, edit forms) keep light surfaces in v1 —
+  full app dark theme is a follow-up refactor.
+
 ## Tech Stack
 - Backend: FastAPI + Motor (MongoDB) + httpx (mfapi.in + AMFI).
 - Frontend: Expo Router 6 (file-based routing), react-native-svg for charts.

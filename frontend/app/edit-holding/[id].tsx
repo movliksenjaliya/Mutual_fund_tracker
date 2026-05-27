@@ -96,7 +96,7 @@ export default function EditHolding() {
       setAvgPrice(String(result.avg_buy_price));
       setBuyUnits("");
       setBuyPrice("");
-      notify("Bought!", `New total: ${result.units.toFixed(3)} units @ ₹${result.avg_buy_price.toFixed(2)} avg`);
+      notify("Bought!", `New total: ${result.units} units @ ₹${result.avg_buy_price.toFixed(4)} avg`);
       load();
     } catch (e: any) {
       notify("Error", String(e.message || e));
@@ -210,7 +210,7 @@ export default function EditHolding() {
             <View style={styles.previewBox} testID="buy-preview">
               <Text style={typography.bodySmall}>After this purchase:</Text>
               <Text style={[typography.bodyMedium, { fontWeight: "700", marginTop: 2 }]}>
-                {previewUnits.toFixed(3)} units @ ₹{previewAvg.toFixed(2)} avg
+                {previewUnits.toFixed(4).replace(/\.?0+$/, "")} units @ ₹{previewAvg.toFixed(4).replace(/\.?0+$/, "")} avg
               </Text>
             </View>
           )}

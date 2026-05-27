@@ -4,9 +4,10 @@ import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet } from "react-native";
 
 import { api } from "@/src/api";
-import { colors, radius } from "@/src/theme";
+import { useColors, radius } from "@/src/theme";
 
 function AlertsTabIcon({ color, size, focused }: { color: string; size: number; focused: boolean }) {
+  const colors = useColors();
   const [unread, setUnread] = useState(0);
   useEffect(() => {
     let alive = true;
@@ -27,7 +28,13 @@ function AlertsTabIcon({ color, size, focused }: { color: string; size: number; 
     <View testID="alerts-tab-icon">
       <Feather name="bell" size={size} color={color} />
       {unread > 0 && (
-        <View style={styles.badge} testID="alerts-tab-badge">
+        <View
+          style={[
+            styles.badge,
+            { backgroundColor: colors.accent },
+          ]}
+          testID="alerts-tab-badge"
+        >
           <Text style={styles.badgeText}>{unread > 9 ? "9+" : unread}</Text>
         </View>
       )}
@@ -36,6 +43,7 @@ function AlertsTabIcon({ color, size, focused }: { color: string; size: number; 
 }
 
 export default function TabsLayout() {
+  const colors = useColors();
   return (
     <Tabs
       screenOptions={{
@@ -89,7 +97,6 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: -4,
     right: -8,
-    backgroundColor: colors.accent,
     borderRadius: radius.pill,
     minWidth: 16,
     height: 16,

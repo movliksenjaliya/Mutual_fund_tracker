@@ -15,7 +15,7 @@ import { Feather } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { api, formatINR } from "@/src/api";
-import { colors, radius, spacing, typography } from "@/src/theme";
+import { colors as lightColors, useColors, useTypography, radius, spacing } from "@/src/theme";
 import ChangePill from "@/src/components/ChangePill";
 import LineChart from "@/src/components/LineChart";
 import {
@@ -31,6 +31,8 @@ const NIFTY_CODE = "120716";
 export default function Dashboard() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const colors = useColors();
+  const typography = useTypography();
   const [nifty, setNifty] = useState<any>(null);
   const [portfolio, setPortfolio] = useState<any>(null);
   const [bestBuys, setBestBuys] = useState<any[]>([]);
@@ -102,7 +104,7 @@ export default function Dashboard() {
 
   if (loading && !portfolio) {
     return (
-      <View style={styles.loadingScreen}>
+      <View style={[styles.loadingScreen, { backgroundColor: lightColors.bg }]}>
         <ActivityIndicator color={colors.brand} />
       </View>
     );
@@ -116,17 +118,17 @@ export default function Dashboard() {
 
   return (
     <ScrollView
-      style={[styles.container, { paddingTop: insets.top }]}
+      style={[styles.container, { backgroundColor: lightColors.bg, paddingTop: insets.top }]}
       contentContainerStyle={{ paddingBottom: 40 }}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.brand} />}
       testID="dashboard-scroll"
     >
       <View style={styles.header}>
         <View>
-          <Text style={typography.overline}>Good day, investor</Text>
-          <Text style={[typography.h1, { marginTop: 4 }]} testID="dashboard-title">Your portfolio</Text>
+          <Text style={[typography.overline, { color: colors.textSecondary }]}>Good day, investor</Text>
+          <Text style={[typography.h1, { marginTop: 4, color: colors.textPrimary }]} testID="dashboard-title">Your portfolio</Text>
         </View>
-        <TouchableOpacity testID="open-settings-btn" style={styles.iconBtn} onPress={() => router.push("/settings")}>
+        <TouchableOpacity testID="open-settings-btn" style={[styles.iconBtn, { backgroundColor: lightColors.surface, borderColor: lightColors.borderLight }]} onPress={() => router.push("/settings")}>
           <Feather name="settings" size={20} color={colors.textPrimary} />
         </TouchableOpacity>
       </View>
@@ -183,13 +185,13 @@ export default function Dashboard() {
       {(portfolio?.items?.length || 0) === 0 && (
         <TouchableOpacity
           testID="add-first-holding"
-          style={[styles.ctaCard]}
+          style={[styles.ctaCard, { backgroundColor: colors.surface, borderColor: colors.brand }]}
           onPress={() => router.push("/search?mode=portfolio")}
         >
           <Feather name="plus-circle" size={20} color={colors.brand} />
           <View style={{ flex: 1, marginLeft: spacing.p3 }}>
-            <Text style={[typography.bodyMedium, { fontWeight: "700" }]}>Add your first holding</Text>
-            <Text style={typography.bodySmall}>Track units, P&L, and dips on funds you own.</Text>
+            <Text style={[typography.bodyMedium, { fontWeight: "700", color: colors.textPrimary }]}>Add your first holding</Text>
+            <Text style={[typography.bodySmall, { color: colors.textSecondary }]}>Track units, P&L, and dips on funds you own.</Text>
           </View>
         </TouchableOpacity>
       )}
@@ -200,16 +202,16 @@ export default function Dashboard() {
           testID="alerts-banner"
           activeOpacity={0.9}
           onPress={() => router.push("/(tabs)/alerts")}
-          style={styles.alertBanner}
+          style={[styles.alertBanner, { backgroundColor: colors.negativeBg }]}
         >
-          <View style={styles.alertDot}>
+          <View style={[styles.alertDot, { backgroundColor: colors.surface }]}>
             <Feather name="bell" size={16} color={colors.accent} />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={[typography.bodyMedium, { fontWeight: "700" }]}>
+            <Text style={[typography.bodyMedium, { fontWeight: "700", color: colors.textPrimary }]}>
               {unread} new drop alert{unread > 1 ? "s" : ""}
             </Text>
-            <Text style={typography.bodySmall}>Tap to review buying opportunities</Text>
+            <Text style={[typography.bodySmall, { color: colors.textSecondary }]}>Tap to review buying opportunities</Text>
           </View>
           <Feather name="chevron-right" size={18} color={colors.textSecondary} />
         </TouchableOpacity>
@@ -217,26 +219,26 @@ export default function Dashboard() {
 
       {/* NIFTY — secondary card */}
       <View style={styles.section}>
-        <Text style={typography.overline}>MARKET PULSE</Text>
-        <Text style={typography.h3}>Nifty 50 Index</Text>
+        <Text style={[typography.overline, { color: colors.textSecondary }]}>MARKET PULSE</Text>
+        <Text style={[typography.h3, { color: colors.textPrimary }]}>Nifty 50 Index</Text>
         <TouchableOpacity
           testID="nifty-card"
           activeOpacity={0.9}
           onPress={() => router.push(`/fund/${NIFTY_CODE}`)}
-          style={styles.niftyCard}
+          style={[styles.niftyCard, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}
         >
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end" }}>
             <View>
-              <Text style={[typography.h2]} testID="nifty-nav">
+              <Text style={[typography.h2, { color: colors.textPrimary }]} testID="nifty-nav">
                 ₹{nifty?.summary?.curr_nav?.toFixed(2) ?? "—"}
               </Text>
-              <Text style={[typography.bodySmall, { marginTop: 2 }]}>NAV • {nifty?.summary?.nav_date || "—"}</Text>
+              <Text style={[typography.bodySmall, { marginTop: 2, color: colors.textSecondary }]}>NAV • {nifty?.summary?.nav_date || "—"}</Text>
             </View>
             <ChangePill changePct={nifty?.summary?.change_pct} size="md" />
           </View>
           {niftyHistory.length > 1 && (
             <View style={{ marginTop: spacing.p3, marginHorizontal: -spacing.p4 }}>
-              <LineChart data={niftyHistory} width={chartWidth - spacing.p4 * 0} height={50} />
+              <LineChart data={niftyHistory} width={chartWidth - spacing.p4 * 0} height={50} stroke={colors.brand} />
             </View>
           )}
         </TouchableOpacity>
@@ -246,14 +248,14 @@ export default function Dashboard() {
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <View>
-            <Text style={typography.overline}>OPPORTUNITY</Text>
-            <Text style={typography.h3}>Best buys today</Text>
+            <Text style={[typography.overline, { color: colors.textSecondary }]}>OPPORTUNITY</Text>
+            <Text style={[typography.h3, { color: colors.textPrimary }]}>Best buys today</Text>
           </View>
         </View>
         {bestBuys.length === 0 ? (
-          <View style={styles.emptyCard}>
-            <Text style={typography.bodyMedium}>No dips in your watchlist today.</Text>
-            <Text style={[typography.bodySmall, { marginTop: 4 }]}>
+          <View style={[styles.emptyCard, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
+            <Text style={[typography.bodyMedium, { color: colors.textPrimary }]}>No dips in your watchlist today.</Text>
+            <Text style={[typography.bodySmall, { marginTop: 4, color: colors.textSecondary }]}>
               Add funds to watchlist to spot buying opportunities.
             </Text>
           </View>
@@ -262,15 +264,15 @@ export default function Dashboard() {
             <TouchableOpacity
               key={b.id}
               testID={`best-buy-${b.scheme_code}`}
-              style={styles.bestBuyCard}
+              style={[styles.bestBuyCard, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}
               activeOpacity={0.9}
               onPress={() => router.push(`/fund/${b.scheme_code}`)}
             >
               <View style={{ flex: 1, paddingRight: spacing.p3 }}>
-                <Text style={[typography.bodyMedium, { fontWeight: "600" }]} numberOfLines={2}>
+                <Text style={[typography.bodyMedium, { fontWeight: "600", color: colors.textPrimary }]} numberOfLines={2}>
                   {b.scheme_name}
                 </Text>
-                <Text style={[typography.bodySmall, { marginTop: 2 }]}>NAV ₹{b.nav.curr_nav.toFixed(2)}</Text>
+                <Text style={[typography.bodySmall, { marginTop: 2, color: colors.textSecondary }]}>NAV ₹{b.nav.curr_nav.toFixed(2)}</Text>
               </View>
               <ChangePill changePct={b.nav.change_pct} />
             </TouchableOpacity>
@@ -280,22 +282,22 @@ export default function Dashboard() {
 
       {/* Tools */}
       <View style={styles.section}>
-        <Text style={typography.overline}>TOOLS</Text>
-        <Text style={typography.h3}>Plan your investment</Text>
+        <Text style={[typography.overline, { color: colors.textSecondary }]}>TOOLS</Text>
+        <Text style={[typography.h3, { color: colors.textPrimary }]}>Plan your investment</Text>
         <View style={{ flexDirection: "row", gap: spacing.p3, marginTop: spacing.p4 }}>
-          <TouchableOpacity testID="open-sip-calculator" style={styles.toolCard} onPress={() => router.push("/tools/sip")}>
+          <TouchableOpacity testID="open-sip-calculator" style={[styles.toolCard, { backgroundColor: colors.surface, borderColor: colors.borderLight }]} onPress={() => router.push("/tools/sip")}>
             <View style={[styles.toolIcon, { backgroundColor: colors.positiveBg }]}>
               <Feather name="trending-up" size={18} color={colors.positive} />
             </View>
-            <Text style={[typography.h4, { marginTop: spacing.p3 }]}>SIP</Text>
-            <Text style={typography.bodySmall}>Monthly investment</Text>
+            <Text style={[typography.h4, { marginTop: spacing.p3, color: colors.textPrimary }]}>SIP</Text>
+            <Text style={[typography.bodySmall, { color: colors.textSecondary }]}>Monthly investment</Text>
           </TouchableOpacity>
-          <TouchableOpacity testID="open-lumpsum-calculator" style={styles.toolCard} onPress={() => router.push("/tools/lumpsum")}>
+          <TouchableOpacity testID="open-lumpsum-calculator" style={[styles.toolCard, { backgroundColor: colors.surface, borderColor: colors.borderLight }]} onPress={() => router.push("/tools/lumpsum")}>
             <View style={[styles.toolIcon, { backgroundColor: colors.positiveBg }]}>
               <Feather name="dollar-sign" size={18} color={colors.positive} />
             </View>
-            <Text style={[typography.h4, { marginTop: spacing.p3 }]}>Lumpsum</Text>
-            <Text style={typography.bodySmall}>One-time invest</Text>
+            <Text style={[typography.h4, { marginTop: spacing.p3, color: colors.textPrimary }]}>Lumpsum</Text>
+            <Text style={[typography.bodySmall, { color: colors.textSecondary }]}>One-time invest</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -304,8 +306,8 @@ export default function Dashboard() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg },
-  loadingScreen: { flex: 1, backgroundColor: colors.bg, alignItems: "center", justifyContent: "center" },
+  container: { flex: 1 },
+  loadingScreen: { flex: 1, alignItems: "center", justifyContent: "center" },
   header: {
     paddingHorizontal: spacing.p6,
     paddingTop: spacing.p4,
@@ -316,7 +318,7 @@ const styles = StyleSheet.create({
   },
   iconBtn: {
     width: 40, height: 40, borderRadius: radius.pill,
-    backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.borderLight,
+    borderWidth: 1,
     alignItems: "center", justifyContent: "center",
   },
   notifBanner: {
@@ -324,7 +326,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.p3,
     padding: spacing.p3,
     borderRadius: radius.md,
-    backgroundColor: colors.positiveBg,
+    backgroundColor: lightColors.positiveBg,
     flexDirection: "row",
     alignItems: "center",
   },
@@ -343,9 +345,9 @@ const styles = StyleSheet.create({
     marginBottom: spacing.p4,
     padding: spacing.p4,
     borderRadius: radius.md,
-    backgroundColor: colors.surface,
+    backgroundColor: lightColors.surface,
     borderWidth: 1,
-    borderColor: colors.brand,
+    borderColor: lightColors.brand,
     flexDirection: "row",
     alignItems: "center",
   },
@@ -354,7 +356,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.p4,
     padding: spacing.p4,
     borderRadius: radius.md,
-    backgroundColor: colors.negativeBg,
+    backgroundColor: lightColors.negativeBg,
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.p3,
@@ -368,23 +370,23 @@ const styles = StyleSheet.create({
   niftyCard: {
     marginTop: spacing.p3,
     padding: spacing.p4,
-    backgroundColor: colors.surface,
+    backgroundColor: lightColors.surface,
     borderWidth: 1,
-    borderColor: colors.borderLight,
+    borderColor: lightColors.borderLight,
     borderRadius: radius.md,
   },
   emptyCard: {
-    padding: spacing.p6, borderRadius: radius.md, backgroundColor: colors.surface,
-    borderWidth: 1, borderColor: colors.borderLight,
+    padding: spacing.p6, borderRadius: radius.md, backgroundColor: lightColors.surface,
+    borderWidth: 1, borderColor: lightColors.borderLight,
   },
   bestBuyCard: {
     flexDirection: "row", alignItems: "center", padding: spacing.p4,
-    borderRadius: radius.md, backgroundColor: colors.surface,
-    borderWidth: 1, borderColor: colors.borderLight, marginBottom: spacing.p3,
+    borderRadius: radius.md, backgroundColor: lightColors.surface,
+    borderWidth: 1, borderColor: lightColors.borderLight, marginBottom: spacing.p3,
   },
   toolCard: {
     flex: 1, padding: spacing.p4, borderRadius: radius.md,
-    backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.borderLight,
+    backgroundColor: lightColors.surface, borderWidth: 1, borderColor: lightColors.borderLight,
   },
   toolIcon: {
     width: 36, height: 36, borderRadius: radius.pill,
