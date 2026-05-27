@@ -130,7 +130,8 @@ export default function Portfolio() {
                     </View>
                   )}
                 </View>
-                                  {summary?.yearly_xirr && Object.keys(summary.yearly_xirr).length > 0 && (
+               
+                {summary?.yearly_xirr && Object.keys(summary.yearly_xirr).length > 0 && (
                     <View style={{ marginTop: spacing.p3 }}>
                       <Text style={[typography.overline, { color: colors.textSecondary, marginBottom: spacing.p2 }]}>
                         YEARLY XIRR
