@@ -561,6 +561,12 @@ async def list_portfolio():
             total_xirr = round(r * 100, 2) if r is not None else None
         except Exception as ex:
             logger.warning(f"Total XIRR failed: {ex}")
+ # Yearly XIRR breakdown
+    yearly_xirr = {}
+    try:
+        yearly_xirr = compute_yearly_xirr(all_cf)
+    except Exception as ex:
+        logger.warning(f"Yearly XIRR failed: {ex}")
 
     # Category breakdown (by current_value)
     cat_map: dict = {}
@@ -590,6 +596,7 @@ async def list_portfolio():
             "total_pnl": round(total_pnl, 2),
             "total_pnl_pct": round(total_pnl_pct, 4),
             "total_xirr": total_xirr,
+            "yearly_xirr": yearly_xirr,
             "category_breakdown": category_breakdown,
         },
     }
