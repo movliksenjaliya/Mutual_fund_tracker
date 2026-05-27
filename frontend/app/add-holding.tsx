@@ -15,13 +15,16 @@ import { Feather } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { api, formatINR } from "@/src/api";
-import { colors, radius, spacing, typography } from "@/src/theme";
+import { useColors, useTypography, radius, spacing } from "@/src/theme";
 import { notify } from "@/src/utils/dialog";
 import ChangePill from "@/src/components/ChangePill";
 
 export default function AddHolding() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const colors = useColors();
+  const typography = useTypography();
+  const styles = stylesFactory(colors);
   const { code, name } = useLocalSearchParams<{ code: string; name: string }>();
   const [units, setUnits] = useState("");
   const [price, setPrice] = useState("");
@@ -215,7 +218,7 @@ export default function AddHolding() {
   );
 }
 
-const styles = StyleSheet.create({
+const stylesFactory = (colors: any) => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
   header: { flexDirection: "row", alignItems: "center", paddingHorizontal: spacing.p6, paddingVertical: spacing.p4 },
   navCard: {

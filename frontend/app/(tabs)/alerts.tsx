@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import {
   View,
   Text,
@@ -13,15 +13,72 @@ import { Feather } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { api } from "@/src/api";
-import { colors, radius, spacing, typography } from "@/src/theme";
+import { useColors, useTypography, radius, spacing } from "@/src/theme";
 import ChangePill from "@/src/components/ChangePill";
 
 export default function Alerts() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const colors = useColors();
+  const typography = useTypography();
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+
+  const styles = useMemo(
+    () =>
+      StyleSheet.create({
+        container: { flex: 1, backgroundColor: colors.bg },
+        header: {
+          paddingHorizontal: spacing.p6,
+          paddingTop: spacing.p4,
+          paddingBottom: spacing.p3,
+          flexDirection: "row",
+          alignItems: "flex-end",
+          justifyContent: "space-between",
+        },
+        markAllBtn: {
+          flexDirection: "row",
+          alignItems: "center",
+          paddingHorizontal: spacing.p3,
+          paddingVertical: spacing.p2,
+          borderRadius: radius.pill,
+          borderWidth: 1,
+          borderColor: colors.borderLight,
+          backgroundColor: colors.surface,
+        },
+        card: {
+          flexDirection: "row",
+          alignItems: "center",
+          gap: spacing.p3,
+          backgroundColor: colors.surface,
+          borderWidth: 1,
+          borderColor: colors.borderLight,
+          borderRadius: radius.md,
+          padding: spacing.p4,
+          marginBottom: spacing.p3,
+        },
+        alertIcon: {
+          width: 36,
+          height: 36,
+          borderRadius: radius.pill,
+          backgroundColor: colors.negativeBg,
+          alignItems: "center",
+          justifyContent: "center",
+        },
+        empty: { alignItems: "center", paddingTop: 60, paddingHorizontal: spacing.p6 },
+        checkBtn: {
+          marginTop: spacing.p6,
+          paddingHorizontal: spacing.p4,
+          paddingVertical: spacing.p3,
+          borderRadius: radius.pill,
+          backgroundColor: colors.brand,
+          flexDirection: "row",
+          alignItems: "center",
+        },
+      }),
+    [colors],
+  );
 
   const load = useCallback(async () => {
     try {
@@ -39,9 +96,7 @@ export default function Alerts() {
 
   const refresh = async () => {
     setRefreshing(true);
-    try {
-      await api.runCheck();
-    } catch {}
+    try { await api.runCheck(); } catch {}
     load();
   };
 
@@ -65,9 +120,7 @@ export default function Alerts() {
         {items.length > 0 && (
           <TouchableOpacity testID="mark-all-read-btn" onPress={markAll} style={styles.markAllBtn}>
             <Feather name="check" size={14} color={colors.brand} />
-            <Text style={[typography.bodySmall, { color: colors.brand, marginLeft: 4, fontWeight: "600" }]}>
-              Mark all read
-            </Text>
+            <Text style={[typography.bodySmall, { color: colors.brand, marginLeft: 4, fontWeight: "600" }]}>Mark all read</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -85,13 +138,11 @@ export default function Alerts() {
               <Feather name="bell-off" size={32} color={colors.textTertiary} />
               <Text style={[typography.h4, { marginTop: spacing.p3 }]}>No alerts yet</Text>
               <Text style={[typography.bodySmall, { textAlign: "center", marginTop: 6 }]}>
-                We'll notify you here when Nifty or your tracked funds drop more than your threshold.
+                You will be notified here when Nifty or your tracked funds drop more than your threshold.
               </Text>
-              <TouchableOpacity testID="run-check-btn" style={[styles.checkBtn]} onPress={refresh}>
+              <TouchableOpacity testID="run-check-btn" style={styles.checkBtn} onPress={refresh}>
                 <Feather name="refresh-cw" size={14} color={colors.textInverse} />
-                <Text style={[typography.bodySmall, { color: colors.textInverse, marginLeft: 6, fontWeight: "600" }]}>
-                  Check now
-                </Text>
+                <Text style={[typography.bodySmall, { color: colors.textInverse, marginLeft: 6, fontWeight: "600" }]}>Check now</Text>
               </TouchableOpacity>
             </View>
           }
@@ -106,9 +157,7 @@ export default function Alerts() {
                 <Feather name="trending-down" size={18} color={colors.negative} />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={[typography.bodyMedium, { fontWeight: "600" }]} numberOfLines={2}>
-                  {item.scheme_name}
-                </Text>
+                <Text style={[typography.bodyMedium, { fontWeight: "600" }]} numberOfLines={2}>{item.scheme_name}</Text>
                 <Text style={[typography.bodySmall, { marginTop: 2 }]}>
                   ₹{item.prev_nav.toFixed(2)} → ₹{item.curr_nav.toFixed(2)} · {item.nav_date}
                 </Text>
@@ -121,54 +170,3 @@ export default function Alerts() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg },
-  header: {
-    paddingHorizontal: spacing.p6,
-    paddingTop: spacing.p4,
-    paddingBottom: spacing.p3,
-    flexDirection: "row",
-    alignItems: "flex-end",
-    justifyContent: "space-between",
-  },
-  markAllBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: spacing.p3,
-    paddingVertical: spacing.p2,
-    borderRadius: radius.pill,
-    borderWidth: 1,
-    borderColor: colors.borderLight,
-    backgroundColor: colors.surface,
-  },
-  card: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.p3,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.borderLight,
-    borderRadius: radius.md,
-    padding: spacing.p4,
-    marginBottom: spacing.p3,
-  },
-  alertIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: radius.pill,
-    backgroundColor: colors.negativeBg,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  empty: { alignItems: "center", paddingTop: 60, paddingHorizontal: spacing.p6 },
-  checkBtn: {
-    marginTop: spacing.p6,
-    paddingHorizontal: spacing.p4,
-    paddingVertical: spacing.p3,
-    borderRadius: radius.pill,
-    backgroundColor: colors.brand,
-    flexDirection: "row",
-    alignItems: "center",
-  },
-});

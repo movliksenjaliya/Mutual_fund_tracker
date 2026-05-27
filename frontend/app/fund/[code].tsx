@@ -13,7 +13,7 @@ import { Feather } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { api, formatINR } from "@/src/api";
-import { colors, radius, spacing, typography } from "@/src/theme";
+import { useColors, useTypography, radius, spacing } from "@/src/theme";
 import LineChart from "@/src/components/LineChart";
 import ChangePill from "@/src/components/ChangePill";
 import { notify } from "@/src/utils/dialog";
@@ -21,6 +21,9 @@ import { notify } from "@/src/utils/dialog";
 export default function FundDetail() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const colors = useColors();
+  const typography = useTypography();
+  const styles = stylesFactory(colors);
   const { code } = useLocalSearchParams<{ code: string }>();
   const [data, setData] = useState<any>(null);
   const [range, setRange] = useState<7 | 30 | 90>(30);
@@ -130,7 +133,7 @@ export default function FundDetail() {
   );
 }
 
-const styles = StyleSheet.create({
+const stylesFactory = (colors: any) => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
   loading: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.bg },
   header: {

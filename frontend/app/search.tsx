@@ -15,11 +15,14 @@ import { Feather } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { api } from "@/src/api";
-import { colors, radius, spacing, typography } from "@/src/theme";
+import { useColors, useTypography, radius, spacing } from "@/src/theme";
 
 export default function Search() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const colors = useColors();
+  const typography = useTypography();
+  const styles = stylesFactory(colors);
   const { mode } = useLocalSearchParams<{ mode?: string }>();
   const [q, setQ] = useState("");
   const [results, setResults] = useState<any[]>([]);
@@ -112,7 +115,7 @@ export default function Search() {
   );
 }
 
-const styles = StyleSheet.create({
+const stylesFactory = (colors: any) => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
   header: {
     flexDirection: "row",

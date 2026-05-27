@@ -14,11 +14,14 @@ import { Feather } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { api, formatINR } from "@/src/api";
-import { colors, radius, spacing, typography } from "@/src/theme";
+import { useColors, useTypography, radius, spacing } from "@/src/theme";
 
 export default function SIPCalc() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const colors = useColors();
+  const typography = useTypography();
+  const styles = stylesFactory(colors);
   const [amount, setAmount] = useState("10000");
   const [years, setYears] = useState("10");
   const [rate, setRate] = useState("12");
@@ -87,7 +90,7 @@ export default function SIPCalc() {
   );
 }
 
-const styles = StyleSheet.create({
+const stylesFactory = (colors: any) => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
   header: { flexDirection: "row", alignItems: "center", paddingHorizontal: spacing.p6, paddingVertical: spacing.p4 },
   input: {

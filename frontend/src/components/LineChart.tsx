@@ -2,10 +2,10 @@ import React from "react";
 import { View } from "react-native";
 import Svg, { Path, Line, Defs, LinearGradient, Stop } from "react-native-svg";
 
-import { colors } from "@/src/theme";
+import { useColors } from "@/src/theme";
 
 interface Props {
-  data: number[]; // newest first or oldest first; we treat as ordered (left-to-right)
+  data: number[];
   width: number;
   height: number;
   stroke?: string;
@@ -13,6 +13,7 @@ interface Props {
 }
 
 export default function LineChart({ data, width, height, stroke, fillGradient = true }: Props) {
+  const colors = useColors();
   if (!data || data.length < 2) {
     return <View style={{ width, height }} />;
   }

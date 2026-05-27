@@ -15,13 +15,16 @@ import { Feather } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { api, formatINR } from "@/src/api";
-import { colors, radius, spacing, typography } from "@/src/theme";
+import { useColors, useTypography, radius, spacing } from "@/src/theme";
 import { confirm, notify } from "@/src/utils/dialog";
 import ChangePill from "@/src/components/ChangePill";
 
 export default function EditHolding() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const colors = useColors();
+  const typography = useTypography();
+  const styles = stylesFactory(colors);
   const { id } = useLocalSearchParams<{ id: string }>();
   const [holding, setHolding] = useState<any>(null);
   const [units, setUnits] = useState("");
@@ -292,7 +295,7 @@ export default function EditHolding() {
   );
 }
 
-const styles = StyleSheet.create({
+const stylesFactory = (colors: any) => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
   loading: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.bg },
   header: {
