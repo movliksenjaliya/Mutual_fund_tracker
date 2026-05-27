@@ -130,6 +130,46 @@ export default function Portfolio() {
                     </View>
                   )}
                 </View>
+                                  {summary?.yearly_xirr && Object.keys(summary.yearly_xirr).length > 0 && (
+                    <View style={{ marginTop: spacing.p3 }}>
+                      <Text style={[typography.overline, { color: colors.textSecondary, marginBottom: spacing.p2 }]}>
+                        YEARLY XIRR
+                      </Text>
+                      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing.p2 }}>
+                        {Object.entries(summary.yearly_xirr)
+                          .sort(([a], [b]) => Number(a) - Number(b))
+                          .map(([year, xirr]) => (
+                            <View
+                              key={year}
+                              style={[
+                                styles.xirrBadge,
+                                {
+                                  backgroundColor:
+                                    Number(xirr) >= 0 ? colors.positiveBg : colors.negativeBg,
+                                },
+                              ]}
+                            >
+                              <Text style={[typography.bodySmall, { color: colors.textSecondary, marginRight: 4 }]}>
+                                {year}
+                              </Text>
+                              <Text
+                                style={[
+                                  typography.bodySmall,
+                                  {
+                                    fontWeight: "700",
+                                    color: Number(xirr) >= 0 ? colors.positive : colors.negative,
+                                  },
+                                ]}
+                              >
+                                {Number(xirr) >= 0 ? "+" : ""}
+                                {Number(xirr).toFixed(2)}%
+                              </Text>
+                            </View>
+                          ))}
+                      </View>
+                    </View>
+                  )}
+
                 <View style={[styles.summaryRow, { borderTopColor: colors.borderLight }]}>
                   <View style={styles.summaryCol}>
                     <Text style={[typography.bodySmall, { color: colors.textSecondary }]}>Invested</Text>
